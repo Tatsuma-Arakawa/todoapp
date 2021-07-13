@@ -1,14 +1,17 @@
 <template>
   <section class="container">
     <h1>Todo App</h1>
-    <p><input type="text" name="content" v-model="content"  @focus="set_flg"/></p>
+    <p>
+      <input type="text" name="content" v-model="content"  @focus="setFlag"/>
+    </p>
     <div>
-      <button @click="insert">save</button>
+      <button @click="create">save</button>
       <button @click="find">find</button>
     </div>
     <ul>
-      <li v-for="(todo, index) in display_todos" :key="index">
-        <span>{{ todo.content }}</span><span>({{ todo.created }})</span><span @click="remove(todo)">×</span>
+      <li v-for="(todo, index) in displayTodos" :key="index">
+        <span>{{ todo.content }}</span>
+        <a @click="remove(todo)">×</a>
       </li>
     </ul>
   </section>
@@ -16,42 +19,44 @@
 
 <script>
 import {mapState} from 'vuex';
+import { API, input } from 'aws-amplify';
+import { createTodo } from '~/src/graphql/mutations';
 
 export default {
   data: function() {
     return {
       content: '',
-      find_flg: false
+      findFlag: false
     }
   },
   computed: {
     ...mapState(['todos']),
-    display_todos: function() {
-      if(this.find_flg) {
-        var arr = [];
-        var data = this.todos;
+    displayTodos: function() {
+      if(this.findFlag) {
+        const array = [];
+        const data = this.todos;
         data.forEach(element => {
           if(element.content.toLowerCase() == this.content.toLowerCase()) {
-            arr.push(element);
+            array.push(element);
           }
         });
-        return arr;
+        return array;
       } else {
         return this.todos;
       }
     }
   },
   methods: {
-    insert: function() {
-      this.$store.commit('insert', {content: this.content});
+    create: function() {
+      this.$store.commit('create', {content: this.content});
       this.content = '';
     },
     find: function() {
-      this.find_flg = true;
+      this.findFlag = true;
     },
-    set_flg: function() {
-      if(this.find_flg) {
-        this.find_flg = false;
+    setFlag: function() {
+      if(this.findFlag) {
+        this.findFlag = false;
         this.content = '';
       }
     },
