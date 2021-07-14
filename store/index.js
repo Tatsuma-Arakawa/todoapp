@@ -1,21 +1,24 @@
+import { API } from 'aws-amplify'
+import { createTodo } from '~/src/graphql/mutations'
+import { onCreateTodo } from '~/src/graphql/subscriptions'
+
 export const state = () => ({
-  todos: []
+  todos: ''
 })
 
 export const mutations = {
-  create: function(state, text) {
-    state.todos.unshift({
-      content: text.content,
+  async create(state, content) {
+    state.todos = content
+    content = state.todos
+    await API.graphql({
+      query: createTodo,
+      variables: {
+        input: {
+          content: content
+        }
+      }
+    }).catch((e) => {
+      console.log(e)
     })
   },
-  remove: function(state, obj) {
-    for(let i = 0; i < state.todos.length; i++) {
-      const ob = state.todos[i];
-      if(ob.content == obj.content ) {
-        alert('削除しました');
-        state.todos.splice(i, 1);
-        return;
-      }
-    }
-  }
 }

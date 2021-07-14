@@ -5,62 +5,67 @@
       <input type="text" name="content" v-model="content"  @focus="setFlag"/>
     </p>
     <div>
-      <button @click="create">save</button>
-      <button @click="find">find</button>
+      <button @click="create(content)">save</button>
     </div>
     <ul>
-      <li v-for="(todo, index) in displayTodos" :key="index">
-        <span>{{ todo.content }}</span>
-        <a @click="remove(todo)">×</a>
+      <li v-for="todo in todos" :key="todo.id">
+        {{ todo.content }}
       </li>
     </ul>
   </section>
 </template>
 
 <script>
-import {mapState} from 'vuex';
+import { mapState } from 'vuex';
 import { API, input } from 'aws-amplify';
-import { createTodo } from '~/src/graphql/mutations';
+import { onCreateTodo } from '~/src/graphql/subscriptions'
+import { listTodos } from '~/src/graphql/queries'
 
 export default {
   data: function() {
     return {
       content: '',
-      findFlag: false
+      findFlag: false,
+      todos: []
     }
   },
-  computed: {
-    ...mapState(['todos']),
-    displayTodos: function() {
-      if(this.findFlag) {
-        const array = [];
-        const data = this.todos;
-        data.forEach(element => {
-          if(element.content.toLowerCase() == this.content.toLowerCase()) {
-            array.push(element);
-          }
-        });
-        return array;
-      } else {
-        return this.todos;
-      }
-    }
+  async created() {
+    await this.getTodos(),
+    await this.subscribe()
   },
   methods: {
-    create: function() {
-      this.$store.commit('create', {content: this.content});
-      this.content = '';
+    async create(content) {
+      if (!content) return
+      this.$store.commit('create', content);
+      this.content = ''
     },
-    find: function() {
+
+    async subscribe() {
+      API.graphql({ query:  onCreateTodo }).subscribe({
+        next: (eventData) => {
+          const todo = eventData.value.data.onCreateTodo
+          this.todos = [...this.todos, todo]
+        }
+      })
+    },
+
+    async getTodos() {
+      const todos = await API.graphql({
+        query: listTodos
+      })
+      this.todos = todos.data.listTodos.items
+    },
+
+    async find() {
       this.findFlag = true;
     },
-    setFlag: function() {
+    async setFlag() {
       if(this.findFlag) {
         this.findFlag = false;
         this.content = '';
       }
     },
-    remove: function(todo) {
+    async remove(todo) {
       this.$store.commit('remove', todo)
     }
   }
