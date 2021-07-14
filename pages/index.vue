@@ -1,18 +1,23 @@
 <template>
   <section class="container">
-    <h1>Todo App</h1>
-    <p>
-      <input type="text" name="content" v-model="content"/>
-    </p>
-    <div>
-      <button @click="create(content)">save</button>
+    <div>  
+      <amplify-authenticator>
+        <h1>Todo App</h1>
+        <p>
+          <input type="text" name="content" v-model="content"/>
+        </p>
+        <div>
+          <button @click="create(content)">save</button>
+        </div>
+        <ul>
+          <li v-for="todo in todos" :key="todo.id">
+            {{ todo.content }}
+            <button @click="remove(todo.id)">×</button>
+          </li>
+        </ul>
+        <amplify-sign-out></amplify-sign-out>
+      </amplify-authenticator>
     </div>
-    <ul>
-      <li v-for="todo in todos" :key="todo.id">
-        {{ todo.content }}
-        <button @click="remove(todo.id)">×</button>
-      </li>
-    </ul>
   </section>
 </template>
 
@@ -25,7 +30,8 @@ export default {
   data: function() {
     return {
       todos: [],
-      content: ''
+      content: '',
+      signedIn: false
     }
   },
   async created() {
@@ -33,6 +39,7 @@ export default {
     await this.createSubscribe()
     await this.deleteSubscribe()
   },
+
   methods: {
     async create(content) {
       if (!content) return
