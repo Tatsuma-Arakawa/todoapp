@@ -2,7 +2,7 @@
   <section class="container">
     <h1>Todo App</h1>
     <p>
-      <input type="text" name="content" v-model="content"  @focus="setFlag"/>
+      <input type="text" name="content" v-model="content"/>
     </p>
     <div>
       <button @click="create(content)">save</button>
@@ -10,43 +10,34 @@
     <ul>
       <li v-for="todo in todos" :key="todo.id">
         {{ todo.content }}
+        <button @click="remove(todo.id)">×</button>
       </li>
     </ul>
   </section>
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import { API, input } from 'aws-amplify';
-import { onCreateTodo } from '~/src/graphql/subscriptions'
-import { listTodos } from '~/src/graphql/queries'
+import { API } from 'aws-amplify';
+import { onCreateTodo, onDeleteTodo } from '~/src/graphql/subscriptions';
+import { listTodos } from '~/src/graphql/queries';
 
 export default {
   data: function() {
     return {
-      content: '',
-      findFlag: false,
-      todos: []
+      todos: [],
+      content: ''
     }
   },
   async created() {
     await this.getTodos(),
-    await this.subscribe()
+    await this.createSubscribe()
+    await this.deleteSubscribe()
   },
   methods: {
     async create(content) {
       if (!content) return
-      this.$store.commit('create', content);
+      this.$store.dispatch('create', content);
       this.content = ''
-    },
-
-    async subscribe() {
-      API.graphql({ query:  onCreateTodo }).subscribe({
-        next: (eventData) => {
-          const todo = eventData.value.data.onCreateTodo
-          this.todos = [...this.todos, todo]
-        }
-      })
     },
 
     async getTodos() {
@@ -56,18 +47,31 @@ export default {
       this.todos = todos.data.listTodos.items
     },
 
-    async find() {
-      this.findFlag = true;
+    async remove(id) {
+      this.$store.dispatch('remove', id)
     },
-    async setFlag() {
-      if(this.findFlag) {
-        this.findFlag = false;
-        this.content = '';
-      }
+
+    async createSubscribe() {
+      API.graphql({
+          query:  onCreateTodo
+        }).subscribe({
+        next: (eventData) => {
+          const todo = eventData.value.data.onCreateTodo
+          this.todos = [...this.todos, todo]
+        }
+      })
     },
-    async remove(todo) {
-      this.$store.commit('remove', todo)
-    }
+
+    async deleteSubscribe() {
+      API.graphql({
+        query: onDeleteTodo
+      }).subscribe({
+        next: (eventData) => {
+          const todo = eventData.value.data.onDeleteTodo.id
+          this.todos = this.todos.filter(item => item.id !== todo)
+        }
+      })
+    },
   }
 }
 </script>

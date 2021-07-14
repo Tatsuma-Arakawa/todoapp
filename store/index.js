@@ -1,15 +1,14 @@
 import { API } from 'aws-amplify'
-import { createTodo } from '~/src/graphql/mutations'
-import { onCreateTodo } from '~/src/graphql/subscriptions'
+import { createTodo, deleteTodo } from '~/src/graphql/mutations'
 
 export const state = () => ({
-  todos: ''
+  content: '',
+  id: ''
 })
 
 export const mutations = {
   async create(state, content) {
-    state.todos = content
-    content = state.todos
+    state.content = content
     await API.graphql({
       query: createTodo,
       variables: {
@@ -21,4 +20,24 @@ export const mutations = {
       console.log(e)
     })
   },
+  async remove(state, id) {
+    state.id = id
+    await API.graphql({
+      query: deleteTodo,
+      variables: {
+        input: {
+          id: id
+        }
+      }
+    })
+  }
+}
+
+export const actions = {
+  create(context, content) {
+    context.commit('create', content)
+  },
+  remove(context, id) {
+    context.commit('remove', id)
+  }
 }
