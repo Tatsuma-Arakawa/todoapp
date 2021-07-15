@@ -5,10 +5,10 @@
         <h1>Todo App</h1>
         <amplify-sign-out></amplify-sign-out>
         <p>
-          <input type="text" name="content" v-model="content"/>
+          <input type="text" name="content" v-model="todos.content"/>
         </p>
         <div>
-          <button @click="create(content)">save</button>
+          <button @click="create(todos.content)">save</button>
         </div>
         <ul>
           <li v-for="todo in todos" :key="todo.id">
@@ -29,10 +29,10 @@ import { listTodos } from '~/src/graphql/queries';
 export default {
   data: function() {
     return {
-      todos: [],
-      content: '',
+      todos: this.$store.state.todos,
     }
   },
+  
   async created() {
     await this.getTodos(),
     await this.createSubscribe()
@@ -40,23 +40,28 @@ export default {
   },
 
   methods: {
+    /** 新規作成 */
     async create(content) {
       if (!content) return
       this.$store.dispatch('create', content);
       this.content = ''
     },
 
+    /** 一覧取得 */
     async getTodos() {
       const todos = await API.graphql({
         query: listTodos
       })
       this.todos = todos.data.listTodos.items
+      // this.$store.dispatch('read')
     },
 
+    /** 削除 */
     async remove(id) {
       this.$store.dispatch('remove', id)
     },
 
+    /** リアルタイム処理 */
     async createSubscribe() {
       API.graphql({
           query:  onCreateTodo
@@ -68,6 +73,7 @@ export default {
       })
     },
 
+    /** リアルタイム処理 */
     async deleteSubscribe() {
       API.graphql({
         query: onDeleteTodo

@@ -1,14 +1,29 @@
 import { API } from 'aws-amplify'
 import { createTodo, deleteTodo } from '~/src/graphql/mutations'
+import { listTodos } from '~/src/graphql/queries';
 
 export const state = () => ({
-  content: '',
-  id: ''
+  todos: [{
+    content: "",
+    id: ""
+  }]
 })
 
+export const getters = {
+  todos: state => state.todos
+}
+
 export const mutations = {
-  async create(state, content) {
-    state.content = content
+  setState(state, { content=state.todos.content, id=state.todos.id }) {
+    state.todos.content = content
+    state.todos.id = id
+  }
+}
+
+export const actions = {
+
+  async create({ commit }, content) {
+    commit('setState', content)
     await API.graphql({
       query: createTodo,
       variables: {
@@ -20,8 +35,9 @@ export const mutations = {
       console.log(e)
     })
   },
-  async remove(state, id) {
-    state.id = id
+
+  async remove({ commit }, id) {
+    commit('setState', id)
     await API.graphql({
       query: deleteTodo,
       variables: {
@@ -30,14 +46,5 @@ export const mutations = {
         }
       }
     })
-  }
-}
-
-export const actions = {
-  create(context, content) {
-    context.commit('create', content)
-  },
-  remove(context, id) {
-    context.commit('remove', id)
   }
 }
